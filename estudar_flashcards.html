@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estudar Flashcards - Conjunto 1</title>
+
+  <link rel="stylesheet" href="core/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    :root {
+      --cor-primaria: #1870D7;
+      --cor-secundaria: #A8D0FF;
+      --cor-fundo-principal: #F5F7FA;
+      --cor-texto-escuro: #1f2937;
+      --cor-ruim: #EF4444;
+      --cor-ok: #FBBF24;
+      --cor-perfeito: #10B981;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--cor-fundo-principal);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem 1rem;
+      width: 100%;
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 550px;
+      background-color: white;
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1.5rem;
+      margin: 0 auto;
+    }
+
+    .card-flashcard {
+      position: relative;
+      perspective: 1000px;
+      width: 100%;
+      height: 280px;
+    }
+
+    @media (min-width: 768px) {
+      .card-flashcard { height: 350px; }
+    }
+
+    .card-inner {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.8s;
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+
+    .card-flashcard.flipped .card-inner { transform: rotateY(180deg); }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+      background-color: white;
+    }
+
+    .card-back { transform: rotateY(180deg); }
+
+    .icon-virar {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 60px;
+      height: 60px;
+      border-top-left-radius: 16px;
+      background-color: var(--cor-primaria);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+
+    .icon-virar:hover { opacity: 1; }
+
+    .btn-avaliacao {
+      height: 50px;
+      border-radius: 10px;
+      font-weight: 600;
+      color: white;
+      font-size: 16px;
+      transition: transform 0.1s, box-shadow 0.1s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-avaliacao:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-ruim { background-color: var(--cor-ruim); }
+    .btn-ok { background-color: var(--cor-ok); color: var(--cor-texto-escuro); }
+    .btn-perfeito { background-color: var(--cor-perfeito); }
+
+    /* NAV INFERIOR */
+    .bottom-nav {
+      display: flex;
+      justify-content: space-around;
+      background: #E6F0FF;
+      border-top: 1px solid #d1d5db;
+      padding: 20px 0;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #6B7280;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-item:hover, .active-nav { color: var(--cor-primaria); }
+
+    .nav-label { font-size: 12px; font-weight: 600; }
+
+    .no-underline { text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="bg-[#E6F0FF] shadow-sm p-4 border-b border-gray-100 flex justify-between items-center w-full">
+    <a href="conjunto_cards.html" class="flex items-center text-gray-700 hover:text-gray-900 transition no-underline w-1/4 min-w-[70px]">
+      <span class="material-icons text-2xl mr-2">arrow_back</span>
+      <span class="text-lg font-semibold hidden sm:inline">Voltar</span>
+    </a>
+    <h1 class="text-xl font-bold text-gray-800 text-center flex-grow">Cards</h1>
+    <div class="w-1/4 min-w-[70px]"></div>
+  </header>
+
+  <!-- CONTEÚDO -->
+  <main>
+    <div class="main-container">
+        <p id="text_contador_cards" class="text-gray-500 text-lg">Carregando...</p>
+
+        <input type="hidden" id="current_card_id" value=""> 
+
+        <div id="card_flashcard" class="card-flashcard">
+            <div class="card-inner">
+                <div class="card-face card-front relative">
+                    <h2 id="card_content_front" class="text-2xl md:text-3xl font-semibold text-gray-800">
+                        Carregando pergunta...
+                    </h2>
+                    <div class="icon-virar">
+                        <span class="material-icons">sync</span>
+                    </div>
+                </div>
+
+                <div class="card-face card-back">
+                    <h2 id="card_content_back" class="text-xl md:text-2xl text-gray-700">
+                        Carregando resposta...
+                    </h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="feedback-buttons flex justify-between w-full mt-6 gap-3">
+            <button class="btn-avaliacao btn-ruim w-1/3">Ruim</button>
+            <button class="btn-avaliacao btn-ok w-1/3">Ok</button>
+            <button class="btn-avaliacao btn-perfeito w-1/3">Perfeito</button>
+        </div>
+
+        <div class="flex justify-between w-full mt-4 gap-3">
+              <button id="btn-edit-card" class="btn-avaliacao bg-gray-400 w-1/3 flex justify-center items-center" title="Editar este flashcard">
+                  <span class="material-icons text-white text-2xl">edit</span>
+              </button>
+
+              <button id="btn-delete-card" class="btn-avaliacao bg-gray-500 w-1/3 flex justify-center items-center" title="Eliminar este flashcard">
+                  <span class="material-icons text-white text-2xl">delete</span>
+              </button>
+
+              <button id="btn-add-card" class="btn-avaliacao bg-blue-500 w-1/3 flex justify-center items-center" title="Adicionar novo flashcard a este conjunto">
+                  <span class="material-icons text-white text-2xl">add</span>
+              </button>
+          </div>
+    </div>
+</main>
+
+  <!-- NAV INFERIOR -->
+  <nav class="bottom-nav">
+    <a href="home.html" class="nav-item no-underline">
+      <span class="material-icons">home</span>
+      <span class="nav-label">Home</span>
+    </a>
+    <a href="foco.html" class="nav-item no-underline">
+      <span class="material-icons">timer</span>
+      <span class="nav-label">Foco</span>
+    </a>
+    <a href="ultimas_anotacoes.html" class="nav-item no-underline">
+      <span class="material-icons">edit_note</span>
+      <span class="nav-label">Anotações</span>
+    </a>
+  </nav>
+
+  <script src="core/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lembris - Home (Grid)</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="core/style.css" />
+</head>
+<body>
+  <div class="main-container">
+    <div class="home-screen-grid">
+      <header class="header-grid">
+        <img src="imagens/icone-lembris.png.png" alt="Logo Lembris" class="lembris-logo-img" />
+
+        <div class="saudacao-avatar-grid">
+          <p class="text-saudacao-grid">Olá, Usuário!</p>
+          <img src="https://placehold.co/45x45/fce7f3/a9207e?text=U" alt="Avatar do Usuário" class="avatar-user" />
+        </div>
+
+        <a href="login.html" class="logout-btn" title="Sair da conta">
+          <i class="fas fa-sign-out-alt"></i>
+        </a>
+      </header>
+
+      <main class="grid-botoes-container">
+        <a href="foco.html" class="card-bloco foco-card">
+          <span class="card-text">Iniciar sessão foco</span>
+        </a>
+
+        <a href="criar_anotacao.html" class="card-bloco anotacoes-card">
+          <span class="card-text">Criar anotações</span>
+        </a>
+
+        <a href="ultimas_anotacoes.html" class="card-bloco ultimas-anotacoes-card">
+          <span class="card-text">Últimas anotações</span>
+        </a>
+
+        <a href="conjunto_cards.html" class="card-bloco flashcards-card">
+          <span class="card-text">Revisar Flashcards</span>
+        </a>
+      </main>
+    </div>
+  </div>
+
+  <style>
+    .header-grid {
+      position: relative;
+    }
+
+    .logout-btn {
+      position: fixed;
+      top: 20px;
+      right: 300px;
+      z-index: 1000;
+      color: #0B4C99;
+      font-size: 1.5rem;
+      padding: 5px;
+      transition: color 0.2s ease, transform 0.2s ease;
+      text-decoration: none;
+    }
+
+    .logout-btn:hover {
+      color: #3A86FF;
+      transform: scale(1.1);
+    }
+  </style>
+</body>
+</html>

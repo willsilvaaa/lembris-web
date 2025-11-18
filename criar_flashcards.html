@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lembris - Criar Flashcards</title>
+
+    <link rel="stylesheet" href="core/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body class="flashcard-body">
+    <div class="main-container flashcard-screen">
+
+        <!-- Barra superior azul -->
+        <div class="top-blue-bar">
+            <header class="header-content">
+                <a href="conjunto_cards.html" class="btn-voltar">
+                    <span class="material-icons">arrow_back</span>
+                    <span>Voltar</span>
+                </a>
+                <h1 class="screen-title">Criar Flashcards</h1>
+            </header>
+        </div>
+
+        <!-- Container do formulário -->
+        <div class="flashcard-form-container">
+            <form id="formCriarFlashcard" method="POST" action="#">
+                <label for="nome_conjunto">Nome do conjunto de estudos</label>
+                <input 
+                    type="text" 
+                    id="nome_conjunto" 
+                    name="nome_conjunto"
+                    placeholder="Ex: Resumo - Desenvolvimento Mobile" 
+                    class="flashcard-input" 
+                    required
+                >
+
+                <label for="pergunta">Pergunta</label>
+                <textarea 
+                    id="pergunta" 
+                    name="pergunta"
+                    placeholder="Adicionar uma pergunta..." 
+                    class="flashcard-textarea" 
+                    rows="3" 
+                    required
+                ></textarea>
+                
+                <label for="resposta">Resposta</label>
+                <textarea 
+                    id="resposta" 
+                    name="resposta"
+                    placeholder="Adicionar uma resposta..." 
+                    class="flashcard-textarea" 
+                    rows="3" 
+                    required
+                ></textarea>
+
+                <div class="tags-section">
+                    <span class="tags-label">Adicionar Tags</span>
+                    <a href="#" class="tags-link">
+                        <span class="material-icons">add_circle_outline</span>
+                        Adicionar
+                    </a>
+                </div>
+
+                <button 
+                    type="submit"
+                    id="btn_adicionar_flashcard" 
+                    class="btn-adicionar-flashcard"
+                >
+                    Adicionar Novo Conjunto De Estudos
+                </button>
+            </form>
+        </div>
+
+        <script src="core/script.js"></script>
+    </div>
+</body>
+</html>

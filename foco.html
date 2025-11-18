@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lembris - Foco (Pomodoro)</title>
+
+    <link rel="stylesheet" href="core/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <style>
+      /* ======= MODAL ======= */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        pointer-events: all;
+      }
+
+      .modal-box {
+        background: #fff;
+        border-radius: 16px;
+        padding: 20px;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        animation: fadeInUp 0.3s ease;
+      }
+
+      .modal-box h2 {
+        font-size: 1.4rem;
+        margin-bottom: 15px;
+        color: #333;
+      }
+
+      .modal-box label {
+        display: block;
+        text-align: left;
+        font-weight: 600;
+        margin: 10px 0 5px;
+        color: #444;
+      }
+
+      .modal-box input {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-bottom: 15px;
+        font-size: 1rem;
+      }
+
+      .modal-actions {
+        display: flex;
+        justify-content: space-around;
+      }
+
+      .modal-btn {
+        background: #4caf50;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .modal-btn.cancel {
+        background: #d33;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          transform: translateY(40px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container foco-screen">
+      <header class="header-foco">
+        <div class="icon-nav-circle">
+          <a
+            href="home.html"
+            class="icon-nav-circle"
+            title="Voltar para a Home"
+          >
+            <span class="material-icons">home</span>
+          </a>
+        </div>
+        <div class="avatar-container-foco"></div>
+      </header>
+
+      <h1 class="foco-title">Foco</h1>
+
+      <div class="timer-container">
+        <div class="timer-circle-background">
+          <span class="timer-value" id="timer-display">25:00</span>
+          <div
+            class="timer-progress-ring"
+            id="progress-ring"
+            style="--progress: 80%"
+          ></div>
+        </div>
+      </div>
+
+      <div class="foco-controls">
+        <button class="control-btn control-pause" id="pause-btn">
+          <span class="material-icons">pause</span>
+          <span class="control-label">Pausar</span>
+        </button>
+
+        <button class="control-btn control-start" id="start-btn">
+          Iniciar
+        </button>
+
+        <button class="control-btn control-reset" id="reset-btn">
+          <span class="material-icons">refresh</span>
+          <span class="control-label">Reiniciar</span>
+        </button>
+      </div>
+
+      <p class="session-status" id="session-status">Sessão 1 de 4</p>
+
+      <nav class="bottom-nav">
+        <div class="nav-item" id="break-nav">
+          <span class="material-icons">play_arrow</span>
+          <span class="nav-label">Descanso</span>
+        </div>
+        <div class="nav-item" id="foco-nav">
+          <span class="material-icons">timer</span>
+          <span class="nav-label">Foco</span>
+        </div>
+        <div class="nav-item" id="settings-nav">
+          <span class="material-icons">settings</span>
+          <span class="nav-label">Personalizar Foco</span>
+        </div>
+      </nav>
+    </div>
+
+    <!-- ======= MODAL DE PERSONALIZAÇÃO ======= -->
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal-box">
+        <h2>Personalizar Foco</h2>
+        <label for="foco-tempo">Tempo de Foco (minutos)</label>
+        <input
+          type="number"
+          id="foco-tempo"
+          placeholder="Ex: 25"
+          min="1"
+          max="120"
+        />
+
+        <label for="descanso-tempo">Tempo de Descanso (minutos)</label>
+        <input
+          type="number"
+          id="descanso-tempo"
+          placeholder="Ex: 5"
+          min="1"
+          max="60"
+        />
+
+        <div class="modal-actions">
+          <button class="modal-btn cancel" id="cancelar-modal">Cancelar</button>
+          <button class="modal-btn" id="salvar-modal">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="core/foco.js"></script>
+  </body>
+</html>

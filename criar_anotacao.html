@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lembris - Criar Anotação</title>
+
+    <link rel="stylesheet" href="core/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+        .anotacao-save-footer {
+            display: flex;
+            justify-content: center;
+            margin-top: 250px;
+        }
+
+        .save-footer-btn {
+            background: linear-gradient(135deg, #36d1dc, #5b86e5);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 22px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .save-footer-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container anotacao-screen">
+
+        <div class="top-gradient-bg">
+            <header class="anotacao-header">
+                <div class="icon-nav-circle">
+                    <a href="home.html" class="icon-nav-circle" title="Voltar para a Home">
+                        <span class="material-icons">home</span>
+                    </a>
+                </div>
+            </header>
+
+            <div class="barra-horizontal"></div>
+
+            <div class="logo-container">
+                <img src="imagens/icone-lembris.png.png" alt="Logo Lembris" class="logo-lembris-small">
+            </div>
+        </div>
+
+        <div class="anotacao-card-wrapper">
+
+            <div class="anotacao-action-bar">
+                <span class="material-icons action-icon">menu_book</span>
+                <h2 class="action-title">Anota Aí!</h2>
+            </div>
+
+            <!-- Form pronto para o JS assumir -->
+            <form id="formAnotacao">
+                <div class="anotacao-input-title-container">
+                    <input 
+                        type="text"
+                        name="titulo"
+                        id="titulo"
+                        placeholder="Título"
+                        class="anotacao-title-input"
+                        required>
+                </div>
+
+                <div class="anotacao-textarea-container">
+                    <textarea
+                        name="conteudo"
+                        id="conteudo"
+                        class="anotacao-body-textarea"
+                        placeholder="Escreva sua anotação aqui..."
+                        required></textarea>
+                </div>
+
+                <div class="anotacao-save-footer">
+                    <button type="submit" class="save-footer-btn">
+                        <span class="material-icons">save</span>
+                        Salvar Anotação
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+<script src="core/script.js"></script></body>
+</html>
