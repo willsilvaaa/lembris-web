@@ -580,7 +580,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (availableCards.length === 0) {
       cardFrontContent.innerHTML =
-        "<h3>Parabéns!</h3><p>Nenhum card disponível para estudo ou revisão hoje.</p>";
+        "</h3><p>Nenhum card disponível para estudo ou revisão hoje.</p>";
       if (contadorCards) contadorCards.textContent = "0 flashcards disponíveis";
       if (btnPrev) btnPrev.disabled = true;
       if (btnNext) btnNext.disabled = true;

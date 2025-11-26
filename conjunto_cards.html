@@ -1,299 +1,342 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lembris - Conjuntos de Flashcards</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lembris - Conjuntos de Flashcards</title>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="core/style.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <!-- CSS -->
+    <link rel="stylesheet" href="core/style.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
 
-  <style>
-    :root {
-      --cor-primaria: #1870d7;
-      --cor-secundaria: #a8d0ff;
-      --cor-fundo: #f5f7fa;
-      --cor-card-claro: #e6f0ff;
-      --cor-texto-escuro: #333;
-      --cor-texto-claro: #fff;
-      --cor-botoes-filtros: #f0f5ff;
-    }
+    <style>
+      :root {
+        --cor-primaria: #1870d7;
+        --cor-secundaria: #a8d0ff;
+        --cor-fundo: #f5f7fa;
+        --cor-card-claro: #e6f0ff;
+        --cor-texto-escuro: #333;
+        --cor-texto-claro: #fff;
+        --cor-botoes-filtros: #f0f5ff;
+      }
 
-    body {
-      font-family: "Poppins", sans-serif;
-      background-color: var(--cor-fundo);
-      color: var(--cor-texto-escuro);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: var(--cor-fundo);
+        color: var(--cor-texto-escuro);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
 
-    .top-blue-bar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 80px;
-      background-color: #e6f0ff;
-      display: flex;
-      align-items: center;
-      z-index: 20;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    }
+      .top-blue-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        background-color: #e6f0ff;
+        display: flex;
+        align-items: center;
+        z-index: 20;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
 
-    .anotacao-header {
-      display: flex;
-      align-items: center;
-      max-width: 1200px;
-      width: 90%;
-      margin: 0 auto;
-      padding: 0 1rem;
-    }
+      .anotacao-header {
+        display: flex;
+        align-items: center;
+        max-width: 1200px;
+        width: 90%;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
 
-    .flashcard-title {
-      font-size: 25px;
-      font-weight: 600;
-      color: var(--cor-texto-escuro);
-      margin-left: 0.5rem;
-    }
+      .flashcard-title {
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--cor-texto-escuro);
+        margin-left: 0.5rem;
+      }
 
-    .icon-nav-circle {
-      color: var(--cor-texto-escuro);
-      border: 1px solid black;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      transition: background-color 0.2s;
-      text-decoration: none;
-      flex-shrink: 0;
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 1000;
-    }
+      .icon-nav-circle {
+        color: var(--cor-texto-escuro);
+        border: 1px solid black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.2s;
+        text-decoration: none;
+        flex-shrink: 0;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+      }
 
-    .icon-nav-circle:hover {
-      background-color: var(--cor-fundo);
-      border-color: var(--cor-primaria);
-    }
+      .icon-nav-circle:hover {
+        background-color: var(--cor-fundo);
+        border-color: var(--cor-primaria);
+      }
 
-    .main-content-web {
-      max-width: 1200px;
-      width: 90%;
-      margin: 0 auto;
-      padding: 95px 1rem 3rem;
-      flex-grow: 1;
-    }
+      .main-content-web {
+        max-width: 1200px;
+        width: 90%;
+        margin: 0 auto;
+        padding: 95px 1rem 3rem;
+        flex-grow: 1;
+      }
 
-    .search-container {
-      margin-bottom: 1.5rem;
-    }
+      .search-container {
+        margin-bottom: 1.5rem;
+      }
 
-    .search-input {
-      width: 100%;
-      padding: 0.75rem 1.5rem;
-      border: 2px solid #ddd;
-      border-radius: 25px;
-      outline: none;
-      font-size: 1rem;
-      padding-left: 3rem;
-      transition: border-color 0.3s;
-    }
+      .search-input {
+        width: 100%;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid #ddd;
+        border-radius: 25px;
+        outline: none;
+        font-size: 1rem;
+        padding-left: 3rem;
+        transition: border-color 0.3s;
+      }
 
-    .search-input:focus {
-      border-color: var(--cor-primaria);
-      box-shadow: 0 0 0 2px rgba(24, 112, 215, 0.2);
-    }
+      .search-input:focus {
+        border-color: var(--cor-primaria);
+        box-shadow: 0 0 0 2px rgba(24, 112, 215, 0.2);
+      }
 
-    .search-wrapper {
-      position: relative;
-    }
+      .search-wrapper {
+        position: relative;
+      }
 
-    .search-icon {
-      position: absolute;
-      left: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #999;
-    }
+      .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #999;
+      }
 
-    .filter-button {
-      padding: 0.5rem 1.5rem;
-      border-radius: 20px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.2s, box-shadow 0.2s;
-      border: 1px solid var(--cor-primaria);
-      background-color: var(--cor-botoes-filtros);
-      color: var(--cor-primaria);
-    }
+      .filter-button {
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        border: 1px solid var(--cor-primaria);
+        background-color: var(--cor-botoes-filtros);
+        color: var(--cor-primaria);
+      }
 
-    .filter-button.active {
-      background-color: var(--cor-primaria);
-      color: var(--cor-texto-claro);
-      box-shadow: 0 4px 8px rgba(24, 112, 215, 0.3);
-    }
+      .filter-button.active {
+        background-color: var(--cor-primaria);
+        color: var(--cor-texto-claro);
+        box-shadow: 0 4px 8px rgba(24, 112, 215, 0.3);
+      }
 
-    .flashcard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
-      margin-top: 2rem;
-    }
+      .flashcard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top: 2rem;
+      }
 
-    .set-card {
-      background-color: var(--cor-card-claro);
-      border-radius: 15px;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: flex-start;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-      transition: transform 0.3s, box-shadow 0.3s;
-      min-height: 150px;
-      position: relative;
-    }
+      .set-card {
+        background-color: var(--cor-card-claro);
+        border-radius: 15px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: flex-start;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s, box-shadow 0.3s;
+        min-height: 150px;
+        position: relative;
+      }
 
-    .set-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-    }
+      .set-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+      }
 
-    .set-card-content {
-      cursor: pointer;
-      flex-grow: 1;
-      width: 100%;
-      padding-bottom: 30px;
-    }
+      .set-card-content {
+        cursor: pointer;
+        flex-grow: 1;
+        width: 100%;
+        padding-bottom: 30px;
+      }
 
-    .set-card-title {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: var(--cor-primaria);
-      line-height: 1.2;
-      margin-bottom: 0.5rem;
-    }
+      .set-card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--cor-primaria);
+        line-height: 1.2;
+        margin-bottom: 0.5rem;
+      }
 
-    .set-card-info {
-      font-size: 0.9em;
-      color: #666;
-      margin-top: auto;
-    }
+      .set-card-info {
+        font-size: 0.9em;
+        color: #666;
+        margin-top: auto;
+      }
 
-    .set-card-actions {
-      position: absolute;
-      bottom: 15px;
-      right: 15px;
-      display: flex;
-      gap: 10px;
-    }
+      .set-card-actions {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        display: flex;
+        gap: 10px;
+      }
 
-    .set-card-action-icon {
-      color: var(--cor-primaria);
-      cursor: pointer;
-      transition: color 0.2s, transform 0.2s;
-      font-size: 1.5rem;
-    }
+      .set-card-action-icon {
+        color: var(--cor-primaria);
+        cursor: pointer;
+        transition: color 0.2s, transform 0.2s;
+        font-size: 1.5rem;
+      }
 
-    .set-card-action-icon.favorited { color: #ffc107; }
-    .set-card-action-icon.edit-icon { color: #38a169; }
-    .set-card-action-icon.delete-icon { color: #e53e3e; }
-    .set-card.hidden { display: none; }
+      .set-card-action-icon.favorited {
+        color: #ffc107;
+      }
+      .set-card-action-icon.edit-icon {
+        display: none;
+      }
+      .set-card-action-icon.delete-icon {
+        color: #e53e3e;
+      }
+      .set-card.hidden {
+        display: none;
+      }
 
-    .action-footer {
-      margin-top: 2.5rem;
-      padding: 1.5rem 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-top: 1px solid #eee;
-    }
+      .action-footer {
+        margin-top: 2.5rem;
+        padding: 1.5rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #eee;
+      }
 
-    .btn-create-flashcards {
-      background-color: var(--cor-primaria);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 25px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 10px rgba(24, 112, 215, 0.4);
-      text-decoration: none;
-    }
+      .btn-create-flashcards {
+        background-color: var(--cor-primaria);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 10px rgba(24, 112, 215, 0.4);
+        text-decoration: none;
+      }
 
-    .btn-create-flashcards:hover {
-      background-color: #155bb9;
-      transform: translateY(-2px);
-    }
-  </style>
-</head>
-<body>
-  <div class="top-blue-bar">
-    <header class="anotacao-header">
-      <a href="home.html" class="icon-nav-circle">
-        <span class="material-icons">home</span>
-      </a>
-      <h1 class="flashcard-title">Flashcards</h1>
-    </header>
-  </div>
+      .btn-create-flashcards:hover {
+        background-color: #155bb9;
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-blue-bar">
+      <header class="anotacao-header">
+        <a href="home.html" class="icon-nav-circle">
+          <span class="material-icons">home</span>
+        </a>
+        <h1 class="flashcard-title">Flashcards</h1>
+      </header>
+    </div>
 
-  <div class="main-content-web">
-    <div class="search-container">
-      <div class="search-wrapper">
-        <span class="material-icons search-icon">search</span>
-        <input type="text" id="search-flashcards" class="search-input" placeholder="Pesquisar conjuntos..." />
+    <div class="main-content-web">
+      <div class="search-container">
+        <div class="search-wrapper">
+          <span class="material-icons search-icon">search</span>
+          <input
+            type="text"
+            id="search-flashcards"
+            class="search-input"
+            placeholder="Pesquisar conjuntos..."
+          />
+        </div>
+      </div>
+
+      <div class="flex space-x-3 overflow-x-auto pb-2">
+        <button class="filter-button active" data-filter="all">Todos</button>
+        <button class="filter-button" data-filter="recent">Recentes</button>
+        <button class="filter-button" data-filter="favorites">Favoritos</button>
+      </div>
+
+      <div id="flashcard-grid" class="flashcard-grid">
+        <div class="set-card" data-id="1" data-favorito="false">
+          <div class="set-card-content">
+            <h3 class="set-card-title">Biologia</h3>
+            <p class="set-card-info">10 cards</p>
+          </div>
+          <div class="set-card-actions">
+            <span
+              class="material-icons set-card-action-icon edit-icon"
+              title="Editar"
+              >edit</span
+            >
+            <span
+              class="material-icons set-card-action-icon delete-icon"
+              title="Excluir"
+              >delete</span
+            >
+            <span
+              class="material-icons set-card-action-icon favorite-icon"
+              title="Favoritar"
+              >star_border</span
+            >
+          </div>
+        </div>
+
+        <div class="set-card" data-id="2" data-favorito="true">
+          <div class="set-card-content">
+            <h3 class="set-card-title">Anatomia</h3>
+            <p class="set-card-info">15 cards</p>
+          </div>
+          <div class="set-card-actions">
+            <span
+              class="material-icons set-card-action-icon edit-icon"
+              title="Editar"
+              >edit</span
+            >
+            <span
+              class="material-icons set-card-action-icon delete-icon"
+              title="Excluir"
+              >delete</span
+            >
+            <span
+              class="material-icons set-card-action-icon favorite-icon favorited"
+              title="Favoritar"
+              >star</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="action-footer">
+        <p class="call-to-action">Crie, revise, memorize!</p>
+        <a href="criar_flashcards.html" class="btn-create-flashcards">
+          <span class="material-icons">add</span> Criar Flashcards
+        </a>
       </div>
     </div>
 
-    <div class="flex space-x-3 overflow-x-auto pb-2">
-      <button class="filter-button active" data-filter="all">Todos</button>
-      <button class="filter-button" data-filter="recent">Recentes</button>
-      <button class="filter-button" data-filter="favorites">Favoritos</button>
-    </div>
-
-    <div id="flashcard-grid" class="flashcard-grid">
-      <div class="set-card" data-id="1" data-favorito="false">
-        <div class="set-card-content">
-          <h3 class="set-card-title">Biologia</h3>
-          <p class="set-card-info">10 cards</p>
-        </div>
-        <div class="set-card-actions">
-          <span class="material-icons set-card-action-icon edit-icon" title="Editar">edit</span>
-          <span class="material-icons set-card-action-icon delete-icon" title="Excluir">delete</span>
-          <span class="material-icons set-card-action-icon favorite-icon" title="Favoritar">star_border</span>
-        </div>
-      </div>
-
-      <div class="set-card" data-id="2" data-favorito="true">
-        <div class="set-card-content">
-          <h3 class="set-card-title">Anatomia</h3>
-          <p class="set-card-info">15 cards</p>
-        </div>
-        <div class="set-card-actions">
-          <span class="material-icons set-card-action-icon edit-icon" title="Editar">edit</span>
-          <span class="material-icons set-card-action-icon delete-icon" title="Excluir">delete</span>
-          <span class="material-icons set-card-action-icon favorite-icon favorited" title="Favoritar">star</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="action-footer">
-      <p class="call-to-action">Crie, revise, memorize!</p>
-      <a href="criar_flashcards.html" class="btn-create-flashcards">
-        <span class="material-icons">add</span> Criar Flashcards
-      </a>
-    </div>
-  </div>
-
-  <script src="core/script.js"></script>
-</body>
+    <script src="core/script.js"></script>
+  </body>
 </html>
