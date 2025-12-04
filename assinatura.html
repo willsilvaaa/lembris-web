@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lembris Pro - Assinatura</title>
+
+    <link rel="stylesheet" href="core/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      const API_BASE_URL = "http://localhost:8000/api";
+      const SIGNATURE_API_URL = `${API_BASE_URL}/assinatura/ativar/`;
+
+      function showMessage(text, isError = false) {
+        const messageArea = document.getElementById("message-area");
+        messageArea.textContent = text;
+        messageArea.classList.remove("error-message", "success-message");
+        messageArea.classList.add(
+          isError ? "error-message" : "success-message"
+        );
+        messageArea.style.display = "block";
+      }
+
+      /**
+       * Adiciona o token de autenticação (Bearer) ao cabeçalho da requisição.
+       */
+      async function fetchAuthenticated(url, options = {}) {
+        const token = localStorage.getItem("user_token");
+        if (!token) {
+          // Se não há token, lança um erro (que será capturado abaixo) e redireciona
+          window.location.href = "index.html";
+          throw new Error("Usuário não autenticado.");
+        }
+        options.headers = {
+          ...options.headers,
+          Authorization: `Token ${token}`,
+        };
+        return fetch(url, options);
+      }
+
+      // FUNÇÃO QUE CHAMA A API APÓS A SIMULAÇÃO DO PAGAMENTO
+      async function assinarPremium(plano) {
+        if (plano !== "pro_mensal") return;
+
+        showMessage(`Processando ativação de assinatura...`, false);
+
+        // Aguarda um pouco antes de chamar a API (simulação de tempo de processamento)
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        try {
+          const response = await fetchAuthenticated(SIGNATURE_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ plano: "pro" }), // Envia o plano 'pro' para o backend
+          });
+
+          // Se a resposta da requisição não for OK (ex: 401, 400, 500)
+          if (!response.ok) {
+            // Se o status for 401 (Unauthorized), a sessão expirou
+            if (response.status === 401) {
+              showMessage(
+                "Sessão expirada. Redirecionando para o login.",
+                true
+              );
+              // Redireciona para o login após a mensagem
+              setTimeout(() => (window.location.href = "index.html"), 1500);
+              return;
+            }
+
+            // Para outros erros (400 Bad Request, 500 Internal Server Error)
+            const errorData = await response.json();
+            const msg =
+              errorData.message || `Falha na API. Status: ${response.status}`;
+            showMessage(`Erro: ${msg}`, true);
+            return;
+          }
+
+          const data = await response.json();
+
+          if (data.success) {
+            showMessage("Assinatura Lembris Pro ativada com sucesso!", false);
+
+            // 🔑 MUDANÇA CRUCIAL: Salva o status Premium no localStorage
+            localStorage.setItem("isPremium", "true");
+
+            setTimeout(() => {
+              window.location.href = "ultimas_anotacoes.html"; // Redireciona para a página de anotações
+            }, 1000);
+          } else {
+            const msg = data.message || "Falha ao ativar a assinatura.";
+            showMessage(`Erro: ${msg}`, true);
+          }
+        } catch (error) {
+          // Captura o erro lançado por 'fetchAuthenticated' se o token for nulo
+          if (error.message === "Usuário não autenticado.") {
+            showMessage(
+              "Você precisa estar logado para assinar. Redirecionando...",
+              true
+            );
+          } else {
+            console.error("Erro ao comunicar com a API:", error);
+            showMessage("Erro de comunicação com o servidor.", true);
+          }
+        }
+      }
+
+      // --- LÓGICA DO MODAL ---
+
+      // Abre o modal e impede a navegação do link
+      function openPixModal(event) {
+        event.preventDefault(); // Evita que o <a> navegue
+        document.getElementById("pixModal").style.display = "flex";
+      }
+
+      // Função para copiar a chave Pix (acessível via onclick no modal)
+      function copyPixKey() {
+        const pixKey = document.getElementById("fakePixKey").innerText;
+        navigator.clipboard
+          .writeText(pixKey)
+          .then(() => {
+            alert("Chave Pix copiada: " + pixKey);
+          })
+          .catch((err) => {
+            console.error("Erro ao copiar: ", err);
+            alert("Copie a chave manualmente: " + pixKey);
+          });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const btnAssinar = document.querySelector(".btn-assinar");
+        const pixModal = document.getElementById("pixModal");
+        const paymentDoneBtn = document.getElementById("paymentDoneBtn");
+        const closeModalBtn = document.getElementById("closeModalBtn");
+
+        // Mapeia o clique do botão 'Assinar Agora' para abrir o modal
+        if (btnAssinar) {
+          btnAssinar.addEventListener("click", openPixModal);
+        }
+
+        // O botão "Simular Pagamento Concluído" fecha o modal e CHAMA A API
+        if (paymentDoneBtn) {
+          paymentDoneBtn.addEventListener("click", async () => {
+            pixModal.style.display = "none"; // Esconde o modal
+            // Chama a função que ativa a assinatura Pro
+            await assinarPremium("pro_mensal");
+          });
+        }
+
+        // Listener para fechar o modal (Cancelar)
+        if (closeModalBtn) {
+          closeModalBtn.addEventListener("click", () => {
+            pixModal.style.display = "none";
+          });
+        }
+
+        // Torna a função copyPixKey acessível globalmente (para o onclick dentro do modal)
+        window.copyPixKey = copyPixKey;
+      });
+    </script>
+
+    <style>
+      /* ESTILOS DA PÁGINA */
+      .assinatura-page-body {
+        font-family: "Poppins", sans-serif;
+        background-color: #f4f7f6;
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+      }
+
+      .assinatura-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .back-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.1);
+        color: #333;
+      }
+
+      .assinatura-container {
+        padding: 20px;
+        max-width: 500px;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .assinatura-title {
+        font-size: 28px;
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      .assinatura-subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 16px;
+      }
+
+      /* Card de Plano */
+      .plano-card {
+        background-color: #fff;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        text-align: left;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .plano-destaque {
+        border: 3px solid #007bff; /* Borda Azul para o plano principal */
+      }
+
+      .plano-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .plano-header h3 {
+        font-size: 20px;
+        color: #007bff;
+        font-weight: 700;
+      }
+      /* Estilos para o Grátis */
+      .plano-card:not(.plano-destaque) .plano-header h3 {
+        color: #333;
+      }
+
+      .plano-preco {
+        font-size: 32px;
+        font-weight: 700;
+        color: #333;
+      }
+
+      .plano-periodo {
+        font-size: 16px;
+        color: #666;
+      }
+
+      .plano-features {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 25px;
+      }
+
+      .plano-features li {
+        margin-bottom: 10px;
+        color: #555;
+        font-size: 15px;
+      }
+      /* Ícone vermelho para recurso desativado (Grátis) */
+      .plano-card:not(.plano-destaque)
+        .plano-features
+        li
+        i.fas.fa-times-circle {
+        color: #d00;
+      }
+
+      .plano-features i {
+        margin-right: 8px;
+        color: #28a745; /* Checkmark verde */
+      }
+      /* Checkmark azul para o Plano Pro */
+      .plano-destaque .plano-features i {
+        color: #007bff;
+      }
+
+      .btn-full {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+      }
+
+      .blue-btn {
+        background-color: #007bff !important;
+        color: white;
+      }
+
+      .btn-disabled {
+        background-color: #ccc !important;
+        color: #666 !important;
+        cursor: default;
+      }
+
+      /* Estilos para mensagem da API */
+      #message-area {
+        text-align: center;
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: none;
+      }
+      .error-message {
+        background-color: #fdd;
+        color: #d00;
+      }
+      .success-message {
+        background-color: #dfd;
+        color: #0c0;
+      }
+
+      .politica-link {
+        margin-top: 20px;
+        font-size: 12px;
+        color: #999;
+      }
+
+      /* ESTILOS PARA O MODAL (CRUCIAIS) */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        /* ESSENCIAL: Garante que ele comece escondido */
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(5px);
+      }
+
+      .modal-content {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .modal-content h3 {
+        color: #007bff;
+        margin-bottom: 15px;
+        font-size: 24px;
+      }
+
+      .pix-key-box {
+        background-color: #f0f0f0;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+
+      .pix-label {
+        display: block;
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 5px;
+      }
+
+      .pix-key-box code {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        display: inline-block;
+        margin-right: 10px;
+      }
+
+      .copy-btn {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        float: right;
+      }
+
+      .copy-btn:hover {
+        background-color: #0056b3;
+      }
+
+      .btn-success {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin-top: 25px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      .btn-success:hover {
+        background-color: #45a049;
+      }
+
+      .btn-cancel {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        background: none;
+        color: #888;
+        border: 1px solid #ddd;
+        border-radius: 25px;
+        cursor: pointer;
+      }
+
+      .modal-info {
+        font-size: 13px;
+        color: #888;
+      }
+    </style>
+  </head>
+
+  <body class="assinatura-page-body">
+    <div class="assinatura-header">
+      <a
+        href="ultimas_anotacoes.html"
+        class="back-icon-link"
+        style="text-decoration: none"
+      >
+        <div class="back-icon">
+          <i class="fas fa-arrow-left"></i>
+        </div>
+      </a>
+    </div>
+
+    <div class="assinatura-container">
+      <h1 class="assinatura-title">Lembris Pro 👑</h1>
+      <p class="assinatura-subtitle">
+        Desbloqueie o poder total da sua produtividade com IA!
+      </p>
+
+      <div class="plano-card">
+        <div class="plano-header">
+          <h3>Plano Grátis</h3>
+          <span class="plano-preco"
+            >R$0<span class="plano-periodo">/mês</span></span
+          >
+        </div>
+        <ul class="plano-features">
+          <li><i class="fas fa-check-circle"></i> Anotações Ilimitadas</li>
+          <li><i class="fas fa-check-circle"></i> Flashcards Ilimitados</li>
+          <li>
+            <i class="fas fa-times-circle"></i> Chat de IA Pro (Indisponível)
+          </li>
+          <li>
+            <i class="fas fa-times-circle"></i> Resumos Inteligentes
+            (Indisponível)
+          </li>
+        </ul>
+        <button class="btn-full btn-disabled">Plano Atual</button>
+      </div>
+
+      <div class="plano-card plano-destaque">
+        <div class="plano-header">
+          <h3>Plano Mensal Pro</h3>
+          <span class="plano-preco"
+            >R$ 19,90<span class="plano-periodo">/mês</span></span
+          >
+        </div>
+        <ul class="plano-features">
+          <li>
+            <i class="fas fa-check-circle"></i> Acesso ilimitado ao
+            <b>Chat de IA</b> (Resumos e Dúvidas)
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <b>Resumos de anotações</b> instantâneos e detalhados
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i> Prioridade no suporte técnico
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i> Novos recursos Pro antes de
+            todos
+          </li>
+        </ul>
+        <a href="#" class="btn-full blue-btn btn-assinar"> Assinar Agora </a>
+      </div>
+
+      <div id="message-area"></div>
+
+      <p class="politica-link">
+        Ao assinar, você concorda com nossos
+        <a href="termos.html" style="color: #007bff">Termos de Serviço</a>.
+      </p>
+    </div>
+
+    <div id="pixModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>🎉 Simulação de Pagamento Pix</h3>
+        <p>
+          Para testar o acesso à IA, simule o pagamento de <b>R$ 19,90. </b>
+        </p>
+
+        <div class="pix-key-box">
+          <span class="pix-label">Chave Pix Falsa (CNPJ):</span>
+          <code id="fakePixKey">99.999.999/0001-99</code>
+          <button class="copy-btn" onclick="copyPixKey()">
+            <i class="fas fa-copy"></i> Copiar
+          </button>
+        </div>
+
+        <button id="paymentDoneBtn" class="btn-success">
+          <i class="fas fa-check-circle"></i> Simular Pagamento Concluído
+        </button>
+        <button id="closeModalBtn" class="btn-cancel">Cancelar</button>
+      </div>
+    </div>
+  </body>
+</html>

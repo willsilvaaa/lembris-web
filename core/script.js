@@ -99,6 +99,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await response.json();
 
                 if (response.ok && data.success) {
+
+                    localStorage.removeItem("isPremium");
+                    
                     // *** NOVO: Salva o token retornado pela API no LocalStorage ***
                     if (data.token) {
                         localStorage.setItem("user_token", data.token);
@@ -111,6 +114,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         JSON.stringify({
                             nome: data.usuario,
                             email: data.email,
+                            // *** NOVO: Salva o status premium (ou um default) ***
+                            is_premium: data.is_premium || false, 
                         })
                     );
                     window.location.href = "home.html";
@@ -175,9 +180,51 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    
+// ============================= LÓGICA DE PREMIUM/IA PRO =====================
 
+/**
+ * @brief Verifica o status premium do usuário no LocalStorage e renderiza o CTA correto.
+ */
+window.verificarStatusPremium = function() {
+    const ctaArea = document.querySelector(".ai-pro-cta-area");
+    if (!ctaArea) return;
+
+    // 1. Prioridade: Verifica o status Premium APÓS A SIMULAÇÃO DE ASSINATURA.
+    // Este valor é salvo na página assinatura.html e tem precedência.
+    const isPremiumFromAssinatura = localStorage.getItem("isPremium") === 'true';
+
+    // 2. Secundário: Verifica o status que veio do Backend no LOGIN (se o usuário já era Premium)
+    const usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
+    const isPremiumFromLogin = usuarioLogado?.is_premium === true;
+
+    // O status final é verdadeiro se for ativado pela assinatura OU se já veio do login.
+    const isPremium = isPremiumFromAssinatura || isPremiumFromLogin;
+
+    let ctaHTML = '';
+
+    if (isPremium) {
+        ctaHTML = `
+            <a href="chat_ia.html" class="btn-ai-chat-pro">
+                <i class="fas fa-brain"></i> ACESSAR IA PRO
+            </a>
+        `;
+    } else {
+        // Se NÃO for Premium (o padrão), mostramos o botão de Desbloquear
+        ctaHTML = `
+            <a href="assinatura.html" class="btn-ai-chat-non-pro">
+                <i class="fas fa-crown"></i> Desbloquear Acesso Premium e IA
+            </a>
+        `;
+    }
+
+    // Se a página for ultimas_anotacoes.html, a área de CTA será preenchida.
+    // Caso contrário, não faz nada.
+    ctaArea.innerHTML = ctaHTML;
+};
+
+    
     // ===================== SISTEMA DE ANOTAÇÕES (CRUD) ==================
-
 
     /**
      * @brief Envia anotação para a API (criar e atualizar) e redireciona.
@@ -358,6 +405,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (a) {
                     tituloInput.value = a.titulo;
                     conteudoInput.value = a.conteudo;
+                    // É importante garantir que o TinyMCE seja atualizado se você estiver usando ele
+                    if (typeof tinymce !== 'undefined') {
+                        tinymce.get(conteudoInput.id)?.setContent(a.conteudo);
+                    }
                 }
             });
         }
@@ -366,7 +417,10 @@ document.addEventListener("DOMContentLoaded", () => {
         anotacaoForm.addEventListener("submit", (event) => {
             event.preventDefault();
             const titulo = tituloInput.value;
-            const conteudo = conteudoInput.value;
+            // Pega o conteúdo do editor TinyMCE se estiver presente
+            const conteudo = (typeof tinymce !== 'undefined' && tinymce.get(conteudoInput.id)) 
+                ? tinymce.get(conteudoInput.id).getContent() 
+                : conteudoInput.value;
 
             if (!titulo || !conteudo) {
                 alert("Preencha todos os campos.");
@@ -459,7 +513,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const favoriteIconText = isFavorited ? "star" : "star_border";
 
         // NOTA: 'num_cards' e 'data_criacao' virão do backend. O valor 5 e new Date() é fallback.
-        const numCards = conjunto.num_cards || 5;
+        const numCards = conjunto.num_cards || 0; // Usando 0 como fallback
         const dataCriacao = new Date(conjunto.data_criacao || new Date());
         const hoje = new Date();
         const diffTime = Math.abs(hoje - dataCriacao);
@@ -520,6 +574,11 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Erro ao carregar conjuntos:", error);
             gridContainer.innerHTML = `<p class="text-red-500">Erro ao carregar dados: ${error.message}</p>`;
         }
+    }
+
+    // Verifica se estamos na página de listagem de conjuntos de flashcards
+    if (document.getElementById("flashcard-grid")) {
+        loadConjuntoCards();
     }
 
     // ************ aqui é FILTRAGEM E FAVORITOS ************
@@ -637,34 +696,41 @@ document.addEventListener("DOMContentLoaded", () => {
     // =================== LÓGICA DE ESTUDO DE FLASHCARDS =================
 
     /**
-     * @brief 
+     * @brief Exibe o card atual na tela de estudo, atualiza contadores e botões.
      */
     function displayCurrentCard() {
         const cardFrontContent = document.getElementById("card_content_front");
         const cardBackContent = document.getElementById("card_content_back");
-        const cardIdField = document.getElementById("current_card_id");
         const contadorCards = document.getElementById("text_contador_cards");
         const cardFlashcard = document.getElementById("card_flashcard");
+        const feedbackButtons = document.querySelector(".feedback-buttons");
 
         const btnPrev = document.getElementById("btn-prev-card");
         const btnNext = document.getElementById("btn-next-card");
+        const cardActions = document.querySelector(".card-actions");
+        const cardFooterActions = document.querySelector(".flex.justify-between.w-full.mt-4.gap-3");
+
 
         // Se a tela estiver virada, desvira ao trocar
         if (cardFlashcard && cardFlashcard.classList.contains("flipped")) {
             cardFlashcard.classList.remove("flipped");
         }
+        
+        // Esconde botões de feedback até que o card seja virado
+        if (feedbackButtons) feedbackButtons.classList.add("invisible"); 
 
         if (availableCards.length === 0) {
-            cardFrontContent.innerHTML =
-                "</h3><p>Nenhum card disponível para estudo ou revisão hoje.</p>";
+            if (cardFrontContent) {
+                cardFrontContent.innerHTML =
+                    "</h3><p>Parabéns! Você revisou todos os cards agendados para hoje.</p>";
+            }
+            if (cardBackContent) cardBackContent.textContent = "Volte amanhã para mais revisões!";
             if (contadorCards) contadorCards.textContent = "0 flashcards disponíveis";
             if (btnPrev) btnPrev.disabled = true;
             if (btnNext) btnNext.disabled = true;
-            document.querySelector(".feedback-buttons")?.remove();
-            document.querySelector(".card-actions")?.classList.add("hidden");
-            document
-                .querySelector(".flex.justify-between.w-full.mt-4.gap-3")
-                ?.classList.add("hidden");
+            if (feedbackButtons) feedbackButtons.classList.add("hidden");
+            if (cardActions) cardActions.classList.add("hidden");
+            if (cardFooterActions) cardFooterActions.classList.add("hidden");
             return;
         }
 
@@ -673,8 +739,6 @@ document.addEventListener("DOMContentLoaded", () => {
         // Atualiza o conteúdo da frente e de trás
         if (cardFrontContent) cardFrontContent.textContent = currentCard.pergunta;
         if (cardBackContent) cardBackContent.textContent = currentCard.resposta;
-
-        if (cardIdField) cardIdField.value = currentCard.id;
 
         // Atualiza o contador 1, 2, 3...
         if (contadorCards) {
@@ -690,7 +754,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /**
-     * @brief 
+     * @brief Carrega cards para estudo de um conjunto específico.
      * *** MUDANÇA: Usa fetchAuthenticated ***
      */
     async function carregarCardsParaEstudo() {
@@ -717,12 +781,24 @@ document.addEventListener("DOMContentLoaded", () => {
             availableCards = await response.json();
             currentCardIndex = 0;
 
-            if (availableCards.length > 0 && tituloTela) {
-                // Aqui o primeiro card criado vai conter o nome do conjunto
-                // Nota: Assumindo que a API retorna 'conjunto_nome' no objeto Flashcard.
-                tituloTela.textContent = `Estudando: ${
-                    availableCards[0].conjunto_nome || "Conjunto"
-                }`;
+            if (availableCards.length > 0) {
+                // Tenta buscar o nome do conjunto no primeiro card (se a API retornar)
+                const conjuntoNome = availableCards[0].conjunto_nome || "Conjunto"; 
+
+                // Tenta carregar o nome do conjunto separadamente se necessário
+                if (conjuntoNome === "Conjunto") {
+                    const conjuntoResponse = await fetchAuthenticated(`${CONJUNTOS_API_URL}${conjuntoId}/`);
+                    if (conjuntoResponse.ok) {
+                        const conjuntoData = await conjuntoResponse.json();
+                        if (tituloTela) tituloTela.textContent = `Estudando: ${conjuntoData.nome}`;
+                    } else {
+                        if (tituloTela) tituloTela.textContent = `Estudando: Conjunto (ID: ${conjuntoId})`;
+                    }
+                } else {
+                    if (tituloTela) tituloTela.textContent = `Estudando: ${conjuntoNome}`;
+                }
+            } else {
+                if (tituloTela) tituloTela.textContent = `Estudando: Nenhum Card Novo`;
             }
 
             // Exibe o primeiro card (ou a mensagem de nenhum card)
@@ -733,6 +809,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cardFrontContent)
                 cardFrontContent.textContent = `Erro ao carregar: ${error.message}`;
         }
+    }
+
+    if (document.querySelector(".estudar-flashcards-body")) {
+        carregarCardsParaEstudo();
     }
 
 
@@ -784,15 +864,24 @@ document.addEventListener("DOMContentLoaded", () => {
         // Exibe o próximo card
         displayCurrentCard();
     }
+    
+    // Torna a função de feedback global
+    window.processarFeedback = processarFeedback;
+
 
     const cardFlashcard = document.getElementById("card_flashcard");
     if (cardFlashcard) {
         const cardInner = cardFlashcard.querySelector(".card-inner");
-
+        const feedbackButtons = document.querySelector(".feedback-buttons");
+        
         // Lógica para virar o card ao clicar no corpo
         if (cardInner) {
             cardInner.addEventListener("click", () => {
                 cardFlashcard.classList.toggle("flipped");
+                // Mostra os botões de feedback após virar o card
+                if (feedbackButtons) {
+                    feedbackButtons.classList.toggle("invisible"); 
+                }
             });
         }
 
@@ -800,8 +889,46 @@ document.addEventListener("DOMContentLoaded", () => {
         const btnAdd = document.querySelector("#btn-add-card");
         const btnDelete = document.querySelector("#btn-delete-card");
         const btnEdit = document.querySelector("#btn-edit-card");
+        const conjuntoId = getUrlParameter("conjunto_id");
 
-        // Botões de Navegação (SEM MUDANÇA)
+        if (conjuntoId) {
+             // Ação de ADICIONAR CARD (vai para a tela de criação com o ID do conjunto)
+            if (btnAdd) {
+                btnAdd.addEventListener('click', () => {
+                    window.location.href = `criar_flashcard.html?conjunto_id=${conjuntoId}`;
+                });
+            }
+            // Ação de EDITAR CONJUNTO
+            if (btnEdit) {
+                 btnEdit.addEventListener('click', () => {
+                    window.location.href = `editar_conjunto.html?conjunto_id=${conjuntoId}`;
+                });
+            }
+            // Ação de DELETAR CONJUNTO (Ainda precisa de uma função específica de delete)
+             if (btnDelete) {
+                 btnDelete.addEventListener('click', async () => {
+                     if (confirm("Tem certeza que deseja deletar este conjunto inteiro? Esta ação é irreversível e deletará todos os cards associados.")) {
+                         try {
+                              const response = await fetchAuthenticated(`${CONJUNTOS_API_URL}${conjuntoId}/`, {
+                                 method: "DELETE",
+                            });
+                             if (response.status === 204) {
+                                 alert("Conjunto deletado com sucesso.");
+                                 window.location.href = CONJUNTO_CARDS_PAGE; // Volta para a lista de conjuntos
+                             } else {
+                                throw new Error(`Falha ao deletar conjunto. Status: ${response.status}`);
+                            }
+                         } catch (error) {
+                             console.error("Erro ao deletar conjunto:", error);
+                            alert(`Não foi possível deletar o conjunto: ${error.message}`);
+                         }
+                     }
+                });
+             }
+        }
+
+
+        // Botões de Navegação (AGORA COM LÓGICA COMPLETA)
         const btnPrev = document.getElementById("btn-prev-card");
         const btnNext = document.getElementById("btn-next-card");
 
@@ -814,9 +941,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         }
-
+        
         if (btnNext) {
-            btnNext.addEventListener("click", (event) => {
+             btnNext.addEventListener("click", (event) => {
                 event.stopPropagation(); // Evita virar o card
                 if (currentCardIndex < availableCards.length - 1) {
                     currentCardIndex++;
@@ -824,226 +951,95 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         }
-
-        // ADICIONAR NOVO FLASHCARD (*** MUDANÇA: Usa fetchAuthenticated ***)
-        if (btnAdd) {
-            btnAdd.addEventListener("click", async () => {
-                const conjuntoId = getUrlParameter("conjunto_id");
-                if (!conjuntoId) return alert("Erro: ID do conjunto não encontrado.");
-
-                const novaPergunta = prompt(
-                    "Digite a nova PERGUNTA para este conjunto:"
-                );
-                if (!novaPergunta) return;
-
-                const novaResposta = prompt("Digite a RESPOSTA para o card:");
-                if (!novaResposta) return;
-
-                try {
-                    // *** SUBSTITUIÇÃO: fetch() por fetchAuthenticated() ***
-                    const response = await fetchAuthenticated(FLASHCARDS_API_URL, {
-                        method: "POST",
-                        body: JSON.stringify({
-                            conjunto: conjuntoId,
-                            pergunta: novaPergunta,
-                            resposta: novaResposta,
-                            nivel_memorizacao: 0,
-                        }),
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error("Erro ao adicionar card:", errorData);
-                        alert("Falha ao adicionar novo flashcard. Verifique o console.");
-                        return;
-                    }
-
-                    alert(
-                        "Novo flashcard adicionado com sucesso ao conjunto! Recarregando..."
-                    );
-                    window.location.reload();
-                } catch (error) {
-                    console.error("Erro na Requisição de adicionar card:", error);
-                    alert("Erro de comunicação com a API.");
-                }
-            });
-        }
-
-        // Seção: ELIMINAR FLASHCARD (*** MUDANÇA: Usa fetchAuthenticated ***)
-        if (btnDelete) {
-            btnDelete.addEventListener("click", async () => {
-                const cardIdField = document.getElementById("current_card_id");
-                const cardId = cardIdField ? cardIdField.value : null;
-
-                if (!cardId)
-                    return alert(
-                        "Nenhum card selecionado para deletar. Recarregue a página."
-                    );
-
-                if (!confirm("Tem certeza que deseja ELIMINAR este flashcard?")) return;
-
-                try {
-                    // *** SUBSTITUIÇÃO: fetch() por fetchAuthenticated() ***
-                    const response = await fetchAuthenticated(`${FLASHCARDS_API_URL}${cardId}/`, {
-                        method: "DELETE",
-                    });
-
-                    if (response.status === 204) {
-                        alert("Flashcard deletado com sucesso!");
-
-                        // Remove da lista local e exibe o próximo card
-                        availableCards.splice(currentCardIndex, 1);
-                        if (
-                            currentCardIndex >= availableCards.length &&
-                            availableCards.length > 0
-                        ) {
-                            currentCardIndex = availableCards.length - 1;
-                        } else if (availableCards.length === 0) {
-                            currentCardIndex = 0;
-                        }
-                        displayCurrentCard();
-                    } else if (!response.ok) {
-                        throw new Error(`Falha ao deletar: Status ${response.status}`);
-                    }
-                } catch (error) {
-                    console.error("Erro ao deletar flashcard:", error);
-                    alert("Erro ao deletar flashcard. Verifique o console.");
-                }
-            });
-        }
-
-        // Seção: EDITAR FLASHCARD (SEM MUDANÇA no handler, a edição está abaixo)
-        if (btnEdit) {
-            btnEdit.addEventListener("click", () => {
-                const cardIdField = document.getElementById("current_card_id");
-                const cardId = cardIdField ? cardIdField.value : null;
-
-                if (!cardId)
-                    return alert(
-                        "Nenhum card selecionado para editar. Recarregue a página."
-                    );
-
-                // Redireciona para a página de edição
-                window.location.href = `editar_flashcard.html?card_id=${cardId}`;
-            });
-        }
-
-        // Seção: AVALIAÇÃO (BOTÕES)
-        const btnRuim = document.querySelector(".btn-ruim");
-        const btnOk = document.querySelector(".btn-ok");
-        const btnPerfeito = document.querySelector(".btn-perfeito");
-
-        // Os valores são 0 ('ruim'), 1 ('ok'), 2 ('perfeito')
-        if (btnRuim) btnRuim.addEventListener("click", () => processarFeedback(0));
-        if (btnOk) btnOk.addEventListener("click", () => processarFeedback(1));
-        if (btnPerfeito)
-            btnPerfeito.addEventListener("click", () => processarFeedback(2));
     }
+    
+    // ---------------------- LOGICA DE CRIAÇÃO/EDIÇÃO DE FLASHCARD INDIVIDUAL --------------------
+    
+    const formFlashcardIndividual = document.getElementById("formFlashcardIndividual");
+    
+    if (formFlashcardIndividual) {
+        const flashcardId = getUrlParameter("flashcard_id");
+        const conjuntoId = getUrlParameter("conjunto_id");
+        const perguntaInput = document.getElementById("pergunta");
+        const respostaInput = document.getElementById("resposta");
+        const saveButton = formFlashcardIndividual.querySelector('.save-footer-btn');
 
-    // ==================== LÓGICA DE EDIÇÃO DE FLASHCARD =================
-
-    /**
-     * @brief Envia as alterações do flashcard para a API usando PATCH.
-     * *** MUDANÇA: Usa fetchAuthenticated ***
-     */
-    async function salvarEdicaoFlashcardAPI(cardId, pergunta, resposta) {
-        try {
-            // *** SUBSTITUIÇÃO: fetch() por fetchAuthenticated() ***
-            const response = await fetchAuthenticated(`${FLASHCARDS_API_URL}${cardId}/`, {
-                method: "PATCH",
-                // Headers Content-Type já injetado em fetchAuthenticated
-                body: JSON.stringify({
-                    pergunta: pergunta,
-                    resposta: resposta,
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("Erro ao salvar card:", errorData);
-                throw new Error("Falha ao salvar as alterações do flashcard.");
-            }
-
-            alert("Flashcard atualizado com sucesso!");
-            window.location.href = CONJUNTO_CARDS_PAGE;
-        } catch (error) {
-            console.error("Erro na Requisição de edição:", error);
-            const messageBox = document.getElementById("edit-message");
-            if (messageBox) {
-                messageBox.textContent = `Erro ao salvar: ${error.message}`;
-                messageBox.classList.remove("hidden");
-            }
-        }
-    }
-
-    // Handler para o formulário de Edição
-    const formEditarFlashcard = document.getElementById("formEditarFlashcard");
-    if (formEditarFlashcard) {
-        const cardId = getUrlParameter("card_id");
-        const perguntaInput = document.getElementById("pergunta_edit");
-        const respostaInput = document.getElementById("resposta_edit");
-        const cardIdField = document.getElementById("edit_card_id");
-        const messageBox = document.getElementById("edit-message");
-
-        // Carregar dados do Flashcard para edição (*** MUDANÇA: Usa fetchAuthenticated ***)
-        async function carregarCardParaEdicao(id) {
-            try {
-                // *** SUBSTITUIÇÃO: fetch() por fetchAuthenticated() ***
-                const response = await fetchAuthenticated(`${FLASHCARDS_API_URL}${id}/`);
-                
-                if (!response.ok) {
-                    throw new Error("Falha ao carregar dados do card.");
+        // Lógica para carregar para edição
+        if (flashcardId) {
+            document.querySelector(".action-title").textContent = "Editar Flashcard";
+            saveButton.innerHTML = '<span class="material-icons">edit</span> Atualizar Card';
+            
+            async function loadCardForEdit() {
+                try {
+                    const response = await fetchAuthenticated(`${FLASHCARDS_API_URL}${flashcardId}/`);
+                    if (!response.ok) throw new Error("Flashcard não encontrado.");
+                    const card = await response.json();
+                    
+                    perguntaInput.value = card.pergunta;
+                    respostaInput.value = card.resposta;
+                } catch (error) {
+                    console.error("Erro ao carregar card para edição:", error);
+                    alert("Não foi possível carregar o flashcard para edição.");
                 }
-                const card = await response.json();
-
-                perguntaInput.value = card.pergunta;
-                respostaInput.value = card.resposta;
-            } catch (e) {
-                console.error(e);
-                alert("Erro ao carregar card para edição.");
-                window.history.back();
             }
+            loadCardForEdit();
+        } else if (conjuntoId) {
+             // Caso seja um novo card em um conjunto existente, só mostra o botão Salvar
+             document.querySelector(".action-title").textContent = "Novo Flashcard";
         }
-
-        if (cardId) {
-            cardIdField.value = cardId;
-            carregarCardParaEdicao(cardId);
-        } else {
-            alert("ID do card não especificado para edição.");
-            window.history.back();
-            return;
-        }
-
-        // Evento de Submissão para Salvar
-        formEditarFlashcard.addEventListener("submit", (event) => {
+        
+        // Lógica de Submissão
+        formFlashcardIndividual.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            const cardToUpdateId = cardIdField.value;
-            const pergunta = perguntaInput.value.trim();
-            const resposta = respostaInput.value.trim();
-
-            if (!pergunta || !resposta) {
-                messageBox.textContent = "Preencha a pergunta e a resposta.";
-                messageBox.classList.remove("hidden");
+            const pergunta = perguntaInput.value;
+            const resposta = respostaInput.value;
+            
+            if (!pergunta || !resposta || (!conjuntoId && !flashcardId)) {
+                alert("Preencha todos os campos e certifique-se de que o ID do conjunto está presente na URL.");
                 return;
             }
 
-            messageBox.classList.add("hidden");
-            salvarEdicaoFlashcardAPI(cardToUpdateId, pergunta, resposta);
+            const method = flashcardId ? "PUT" : "POST";
+            const url = flashcardId
+                ? `${FLASHCARDS_API_URL}${flashcardId}/`
+                : FLASHCARDS_API_URL;
+
+            try {
+                const response = await fetchAuthenticated(url, {
+                    method: method,
+                    body: JSON.stringify({ 
+                        pergunta: pergunta, 
+                        resposta: resposta,
+                        // Inclui conjuntoId apenas na criação (POST)
+                        ...(flashcardId ? {} : { conjunto: conjuntoId })
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("Erro ao salvar Flashcard:", errorData);
+                    throw new Error(
+                        "Falha ao salvar o flashcard. Detalhes: " +
+                        JSON.stringify(errorData, null, 2)
+                    );
+                }
+                
+                alert(`Flashcard ${flashcardId ? "atualizado" : "criado"} com sucesso!`);
+                
+                // Redireciona de volta para a lista de conjuntos ou para a tela de estudo
+                if (conjuntoId) {
+                    window.location.href = `estudar_flashcards.html?conjunto_id=${conjuntoId}`;
+                } else {
+                    window.location.href = CONJUNTO_CARDS_PAGE;
+                }
+                
+            } catch (error) {
+                console.error("Erro na Requisição:", error);
+                alert(`Erro ao salvar: ${error.message}. Verifique o console para detalhes.`);
+            }
         });
     }
 
-    // --------------------------------------------------------------------
-    // ====================== Chamadas Iniciais ===========================
-    // --------------------------------------------------------------------
 
-    // Chamada para carregar a lista de conjuntos na tela 'conjunto_cards.html'
-    if (document.getElementById("flashcard-grid")) {
-        loadConjuntoCards();
-    }
-
-    // Chamada para carregar o primeiro card na tela 'estudar_flashcards.html'
-    if (document.getElementById("card_flashcard")) {
-        carregarCardsParaEstudo();
-    }
 });

@@ -5,11 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LembrIS - Login</title>
 
-    <!-- CSS local -->
-    <link rel="stylesheet" href="core/style.css">
+    <link rel="stylesheet" href="core/style.css"> 
 
-    <!-- Ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* Apenas um exemplo de como ficaria o novo estilo */
+        .premium-call-to-action {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .btn-premium-cta {
+            display: block;
+            padding: 15px;
+            /* Gradiente Dourado/Laranja para destaque Premium */
+            background: linear-gradient(45deg, #FFD700, #FFA500); 
+            color: #333; 
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-premium-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-premium-cta i {
+            margin-right: 10px;
+            color: #8B0000; /* Coroa em destaque */
+        }
+    </style>
 </head>
 
 <body class="login-page-body">
@@ -31,14 +61,18 @@
                 <label for="password">Senha</label>
                 <input type="password" id="password" name="password" required>
 
-                <!-- Link "Esqueceu a senha?" -->
                 <a href="esqueci_senha.html" class="forgot-password" style="display:block; text-align:right; margin-top:5px; margin-bottom:15px; font-size:14px;">
                     Esqueceu a senha? <span class="click-here" style="color:#007bff; text-decoration:underline;">Clique aqui</span>
                 </a>
 
-                <button type="submit" class="btn-full blue-btn">Acessar</button>
-            </form>
+         <button type="submit" class="btn-full blue-btn">Acessar</button>
+             </form>
 
+            <div class="premium-call-to-action">
+                <div class="btn-premium-cta" style="cursor: default;">
+                 <i class="fas fa-crown"></i>
+                  <b>Resumos rápidos</b> e acesso exclusivo ao chat de IA Pro.<br> 
+                </div>
             <p class="social-text">Continuar com Google ou Apple</p>
             <div class="social-login">
                 <img src="imagens/apple-logo.png" alt="Login com Apple" class="social-icon">

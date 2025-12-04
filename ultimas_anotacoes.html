@@ -5,12 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lembris - Últimas Anotações</title>
 
-    <!-- CSS local -->
     <link rel="stylesheet" href="core/style.css">
 
-    <!-- Fontes e ícones -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        /* Estilos para o botão de acesso ao chat de IA */
+        .ai-pro-cta-area {
+            padding: 15px 20px;
+            text-align: center;
+            background-color: #fff; 
+            border-bottom: 1px solid #eee;
+            margin-bottom: 50px;
+        }
+
+        /* ESTILO CORRIGIDO: Botão Premium (Chat Lembris Pro) - Gradiente Verde */
+        .btn-ai-chat-pro {
+            display: block;
+            padding: 15px;
+            /* Gradiente Verde Vibrante */
+            background: linear-gradient(90deg, #4CAF50, #8BC34A); 
+            color: white;
+            text-decoration: none;
+            border-radius: 25px; 
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-ai-chat-pro:hover {
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.6);
+            transform: translateY(-1px);
+        }
+
+        .btn-ai-chat-pro i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        /* NOVO ESTILO: Para a chamada de ação para quem não é Pro (Desbloquear) */
+        .btn-ai-chat-non-pro {
+            display: block;
+            padding: 15px;
+            background: #ff9800; /* Laranja chamativo */
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-ai-chat-non-pro i {
+            margin-right: 10px;
+        }
+    </style>
 </head>
 
 <body class="ultimas-anotacoes-body">
@@ -30,6 +84,10 @@
             </div>
         </div>
 
+        <div class="ai-pro-cta-area" id="aiCtaArea">
+            <p style="text-align:center; color:#888;">Carregando acesso Lembris Pro...</p>
+        </div>
+        
         <div class="anotacao-card-wrapper lista-anotacoes-wrapper">
             
             <div class="anotacao-action-bar">
@@ -37,14 +95,56 @@
                 <h2 class="action-title">Últimas Anotações</h2>
             </div>
 
-            <!-- Agora completamente vazio.
-                 O JavaScript irá adicionar as anotações aqui -->
             <div class="lista-anotacoes-container"></div>
 
         </div>
     </div>
 
-    <!-- Apenas o script principal -->
+
     <script src="core/script.js"></script>
+    <script>
+        
+        const CHAT_IA_URL = "chat_ia.html"; // <-- URL CORRIGIDA PARA O CHAT DA IA
+
+        // Templates HTML
+        const PREMIUM_HTML = `
+            <a href="${CHAT_IA_URL}" class="btn-ai-chat-pro">
+                <i class="fas fa-robot"></i> Chat Lembris Pro
+            </a>
+        `;
+
+        const NON_PREMIUM_HTML = `
+            <a href="assinatura.html" class="btn-ai-chat-non-pro">
+                <i class="fas fa-crown"></i> Desbloquear Acesso Premium e IA
+            </a>
+        `;
+
+        /**
+         * Verifica o status Premium no localStorage (para carregamento rápido) 
+         * e renderiza o botão correto.
+         */
+        function verificarStatusPremium() {
+            // Verifica o localStorage, atualizado pela página de assinatura
+            const isPremium = localStorage.getItem("isPremium") === 'true'; 
+            const ctaArea = document.getElementById('aiCtaArea');
+            
+            if (!ctaArea) return;
+
+            // Limpa a área de carregamento
+            ctaArea.innerHTML = ''; 
+
+            if (isPremium) {
+                // Usuário é Premium: Exibe o botão de Chat Pro
+                ctaArea.innerHTML = PREMIUM_HTML;
+            } else {
+                // Usuário NÃO é Premium: Exibe o botão para Assinar
+                ctaArea.innerHTML = NON_PREMIUM_HTML;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            verificarStatusPremium();
+        });
+    </script>
 </body>
 </html>
