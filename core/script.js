@@ -695,351 +695,382 @@ window.verificarStatusPremium = function() {
 
     // =================== LÓGICA DE ESTUDO DE FLASHCARDS =================
 
-    /**
-     * @brief Exibe o card atual na tela de estudo, atualiza contadores e botões.
-     */
-    function displayCurrentCard() {
-        const cardFrontContent = document.getElementById("card_content_front");
-        const cardBackContent = document.getElementById("card_content_back");
-        const contadorCards = document.getElementById("text_contador_cards");
-        const cardFlashcard = document.getElementById("card_flashcard");
-        const feedbackButtons = document.querySelector(".feedback-buttons");
+  /**
+   * @brief 
+   */
+  function displayCurrentCard() {
+    const cardFrontContent = document.getElementById("card_content_front");
+    const cardBackContent = document.getElementById("card_content_back");
+    const cardIdField = document.getElementById("current_card_id");
+    const contadorCards = document.getElementById("text_contador_cards");
+    const cardFlashcard = document.getElementById("card_flashcard");
 
-        const btnPrev = document.getElementById("btn-prev-card");
-        const btnNext = document.getElementById("btn-next-card");
-        const cardActions = document.querySelector(".card-actions");
-        const cardFooterActions = document.querySelector(".flex.justify-between.w-full.mt-4.gap-3");
+    const btnPrev = document.getElementById("btn-prev-card");
+    const btnNext = document.getElementById("btn-next-card");
 
-
-        // Se a tela estiver virada, desvira ao trocar
-        if (cardFlashcard && cardFlashcard.classList.contains("flipped")) {
-            cardFlashcard.classList.remove("flipped");
-        }
-        
-        // Esconde botões de feedback até que o card seja virado
-        if (feedbackButtons) feedbackButtons.classList.add("invisible"); 
-
-        if (availableCards.length === 0) {
-            if (cardFrontContent) {
-                cardFrontContent.innerHTML =
-                    "</h3><p>Parabéns! Você revisou todos os cards agendados para hoje.</p>";
-            }
-            if (cardBackContent) cardBackContent.textContent = "Volte amanhã para mais revisões!";
-            if (contadorCards) contadorCards.textContent = "0 flashcards disponíveis";
-            if (btnPrev) btnPrev.disabled = true;
-            if (btnNext) btnNext.disabled = true;
-            if (feedbackButtons) feedbackButtons.classList.add("hidden");
-            if (cardActions) cardActions.classList.add("hidden");
-            if (cardFooterActions) cardFooterActions.classList.add("hidden");
-            return;
-        }
-
-        const currentCard = availableCards[currentCardIndex];
-
-        // Atualiza o conteúdo da frente e de trás
-        if (cardFrontContent) cardFrontContent.textContent = currentCard.pergunta;
-        if (cardBackContent) cardBackContent.textContent = currentCard.resposta;
-
-        // Atualiza o contador 1, 2, 3...
-        if (contadorCards) {
-            contadorCards.textContent = `${currentCardIndex + 1} / ${
-                availableCards.length
-            } cards`;
-        }
-
-
-        if (btnPrev) btnPrev.disabled = currentCardIndex === 0;
-        if (btnNext)
-            btnNext.disabled = currentCardIndex === availableCards.length - 1;
+    // Se a tela estiver virada, desvira ao trocar
+    if (cardFlashcard && cardFlashcard.classList.contains("flipped")) {
+      cardFlashcard.classList.remove("flipped");
     }
 
-    /**
-     * @brief Carrega cards para estudo de um conjunto específico.
-     * *** MUDANÇA: Usa fetchAuthenticated ***
-     */
-    async function carregarCardsParaEstudo() {
-        const conjuntoId = getUrlParameter("conjunto_id");
-        const tituloTela = document.querySelector(".screen-title");
+    if (availableCards.length === 0) {
+      cardFrontContent.innerHTML =
+        "</h3><p>Nenhum card disponível para estudo ou revisão hoje.</p>";
+      if (contadorCards) contadorCards.textContent = "0 flashcards disponíveis";
+      if (btnPrev) btnPrev.disabled = true;
+      if (btnNext) btnNext.disabled = true;
+      document.querySelector(".feedback-buttons")?.remove();
+      document.querySelector(".card-actions")?.classList.add("hidden");
+      document
+        .querySelector(".flex.justify-between.w-full.mt-4.gap-3")
+        ?.classList.add("hidden");
+      return;
+    }
 
-        if (!conjuntoId) {
-            console.error("Erro: Conjunto ID não encontrado.");
-            return;
+    const currentCard = availableCards[currentCardIndex];
+
+    // Atualiza o conteúdo da frente e de trás
+    if (cardFrontContent) cardFrontContent.textContent = currentCard.pergunta;
+    if (cardBackContent) cardBackContent.textContent = currentCard.resposta;
+
+    if (cardIdField) cardIdField.value = currentCard.id;
+
+    // Atualiza o contador 1, 2, 3...
+    if (contadorCards) {
+      contadorCards.textContent = `${currentCardIndex + 1} / ${
+        availableCards.length
+      } cards`;
+    }
+
+   
+    if (btnPrev) btnPrev.disabled = currentCardIndex === 0;
+    if (btnNext)
+      btnNext.disabled = currentCardIndex === availableCards.length - 1;
+  }
+
+  /**
+   * @brief 
+   */
+  async function carregarCardsParaEstudo() {
+    const conjuntoId = getUrlParameter("conjunto_id");
+    const tituloTela = document.querySelector(".screen-title");
+
+    if (!conjuntoId) {
+      console.error("Erro: Conjunto ID não encontrado.");
+      return;
+    }
+
+    const STUDY_API_URL = `${CONJUNTOS_API_URL}${conjuntoId}/cards_para_estudar/`;
+
+    try {
+      const response = await fetch(STUDY_API_URL);
+      if (!response.ok) {
+        throw new Error(
+          "Falha ao carregar cards para estudo. Verifique a API."
+        );
+      }
+
+      availableCards = await response.json();
+      currentCardIndex = 0;
+
+      if (availableCards.length > 0 && tituloTela) {
+        // Aqui o primeiro card criado vai conter o nome do conjunto
+        tituloTela.textContent = `Estudando: ${
+          availableCards[0].conjunto_nome || "Conjunto"
+        }`;
+      }
+
+      // Exibe o primeiro card (ou a mensagem de nenhum card)
+      displayCurrentCard();
+    } catch (error) {
+      console.error("Erro ao carregar cards:", error);
+      const cardFrontContent = document.getElementById("card_content_front");
+      if (cardFrontContent)
+        cardFrontContent.textContent = `Erro ao carregar: ${error.message}`;
+    }
+  }
+
+
+  // Funções de feedback (Avalia e avança)
+  async function processarFeedback(nivel) {
+    const currentCard = availableCards[currentCardIndex];
+    const cardId = currentCard ? currentCard.id : null;
+
+    if (!cardId)
+      return console.error("Erro: ID do card não encontrado para avaliação.");
+
+    
+
+    // Remove o card do array (simulando que ele foi revisado e saiu da fila)
+    availableCards.splice(currentCardIndex, 1);
+
+    // Ajusta o índice para o próximo card (ou o último da nova lista)
+    if (
+      currentCardIndex >= availableCards.length &&
+      availableCards.length > 0
+    ) {
+      currentCardIndex = availableCards.length - 1;
+    } else if (availableCards.length === 0) {
+      currentCardIndex = 0; // Se a lista estiver vazia
+    }
+
+    // Exibe o próximo card
+    displayCurrentCard();
+  }
+
+  const cardFlashcard = document.getElementById("card_flashcard");
+  if (cardFlashcard) {
+    const cardInner = cardFlashcard.querySelector(".card-inner");
+
+    // Lógica para virar o card ao clicar no corpo
+    if (cardInner) {
+      cardInner.addEventListener("click", () => {
+        cardFlashcard.classList.toggle("flipped");
+      });
+    }
+
+    // Seletores reais dos botões de Ação
+    const btnAdd = document.querySelector("#btn-add-card");
+    const btnDelete = document.querySelector("#btn-delete-card");
+    const btnEdit = document.querySelector("#btn-edit-card");
+
+    // Botões de Navegação (NOVOS)
+    const btnPrev = document.getElementById("btn-prev-card");
+    const btnNext = document.getElementById("btn-next-card");
+
+    if (btnPrev) {
+      btnPrev.addEventListener("click", (event) => {
+        event.stopPropagation(); // Evita virar o card
+        if (currentCardIndex > 0) {
+          currentCardIndex--;
+          displayCurrentCard();
         }
+      });
+    }
 
-        const STUDY_API_URL = `${CONJUNTOS_API_URL}${conjuntoId}/cards_para_estudar/`;
+    if (btnNext) {
+      btnNext.addEventListener("click", (event) => {
+        event.stopPropagation(); // Evita virar o card
+        if (currentCardIndex < availableCards.length - 1) {
+          currentCardIndex++;
+          displayCurrentCard();
+        }
+      });
+    }
+
+    // ADICIONAR NOVO FLASHCARD (Dentro do Conjunto Atual)
+    if (btnAdd) {
+      btnAdd.addEventListener("click", async () => {
+        const conjuntoId = getUrlParameter("conjunto_id");
+        if (!conjuntoId) return alert("Erro: ID do conjunto não encontrado.");
+
+        const novaPergunta = prompt(
+          "Digite a nova PERGUNTA para este conjunto:"
+        );
+        if (!novaPergunta) return;
+
+        const novaResposta = prompt("Digite a RESPOSTA para o card:");
+        if (!novaResposta) return;
 
         try {
-            // *** SUBSTITUIÇÃO: fetch() por fetchAuthenticated() ***
-            const response = await fetchAuthenticated(STUDY_API_URL);
-            
-            if (!response.ok) {
-                throw new Error(
-                    "Falha ao carregar cards para estudo. Verifique a API."
-                );
-            }
+          const response = await fetch(FLASHCARDS_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              conjunto: conjuntoId, 
+              pergunta: novaPergunta,
+              resposta: novaResposta,
+              nivel_memorizacao: 0, 
+            }),
+          });
 
-            availableCards = await response.json();
-            currentCardIndex = 0;
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Erro ao adicionar card:", errorData);
+            alert("Falha ao adicionar novo flashcard. Verifique o console.");
+            return;
+          }
 
-            if (availableCards.length > 0) {
-                // Tenta buscar o nome do conjunto no primeiro card (se a API retornar)
-                const conjuntoNome = availableCards[0].conjunto_nome || "Conjunto"; 
-
-                // Tenta carregar o nome do conjunto separadamente se necessário
-                if (conjuntoNome === "Conjunto") {
-                    const conjuntoResponse = await fetchAuthenticated(`${CONJUNTOS_API_URL}${conjuntoId}/`);
-                    if (conjuntoResponse.ok) {
-                        const conjuntoData = await conjuntoResponse.json();
-                        if (tituloTela) tituloTela.textContent = `Estudando: ${conjuntoData.nome}`;
-                    } else {
-                        if (tituloTela) tituloTela.textContent = `Estudando: Conjunto (ID: ${conjuntoId})`;
-                    }
-                } else {
-                    if (tituloTela) tituloTela.textContent = `Estudando: ${conjuntoNome}`;
-                }
-            } else {
-                if (tituloTela) tituloTela.textContent = `Estudando: Nenhum Card Novo`;
-            }
-
-            // Exibe o primeiro card (ou a mensagem de nenhum card)
-            displayCurrentCard();
+          alert(
+            "Novo flashcard adicionado com sucesso ao conjunto! Recarregando..."
+          );
+          window.location.reload();
         } catch (error) {
-            console.error("Erro ao carregar cards:", error);
-            const cardFrontContent = document.getElementById("card_content_front");
-            if (cardFrontContent)
-                cardFrontContent.textContent = `Erro ao carregar: ${error.message}`;
+          console.error("Erro na Requisição de adicionar card:", error);
+          alert("Erro de comunicação com a API.");
         }
+      });
     }
 
-    if (document.querySelector(".estudar-flashcards-body")) {
-        carregarCardsParaEstudo();
-    }
-
-
-    // Funções de feedback (Avalia e avança)
-    async function processarFeedback(nivel) {
-        const currentCard = availableCards[currentCardIndex];
-        const cardId = currentCard ? currentCard.id : null;
-        let avaliacao_texto;
-        
-        if (nivel === 0) avaliacao_texto = 'ruim';
-        else if (nivel === 1) avaliacao_texto = 'ok';
-        else if (nivel === 2) avaliacao_texto = 'perfeito';
-        else return console.error("Nível de avaliação inválido.");
+    // Seção: ELIMINAR FLASHCARD (O card que está sendo exibido)
+    if (btnDelete) {
+      btnDelete.addEventListener("click", async () => {
+        const cardIdField = document.getElementById("current_card_id");
+        const cardId = cardIdField ? cardIdField.value : null;
 
         if (!cardId)
-            return console.error("Erro: ID do card não encontrado para avaliação.");
+          return alert(
+            "Nenhum card selecionado para deletar. Recarregue a página."
+          );
+
+        if (!confirm("Tem certeza que deseja ELIMINAR este flashcard?")) return;
 
         try {
-            // *** MUDANÇA: Envia a avaliação para a API (fetchAuthenticated) ***
-            const response = await fetchAuthenticated(`${FLASHCARDS_API_URL}${cardId}/avaliar/`, {
-                method: "POST",
-                body: JSON.stringify({ avaliacao: avaliacao_texto }),
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Falha ao avaliar o card. Status: ${response.status}`);
+          const response = await fetch(`${FLASHCARDS_API_URL}${cardId}/`, {
+            method: "DELETE",
+          });
+
+          if (response.status === 204) {
+            alert("Flashcard deletado com sucesso!");
+
+            // Remove da lista local e exibe o próximo card
+            availableCards.splice(currentCardIndex, 1);
+            if (
+              currentCardIndex >= availableCards.length &&
+              availableCards.length > 0
+            ) {
+              currentCardIndex = availableCards.length - 1;
+            } else if (availableCards.length === 0) {
+              currentCardIndex = 0;
             }
-            
-            // Opcional: const result = await response.json();
+            displayCurrentCard();
+          } else if (!response.ok) {
+            throw new Error(`Falha ao deletar: Status ${response.status}`);
+          }
         } catch (error) {
-            console.error("Erro ao processar feedback na API:", error);
-            alert("Falha ao registrar a avaliação. O card será mantido na lista.");
-            return; // Sai sem remover o card da lista local
+          console.error("Erro ao deletar flashcard:", error);
+          alert("Erro ao deletar flashcard. Verifique o console.");
         }
-        
-        // Remove o card do array (simulando que ele foi revisado e saiu da fila)
-        availableCards.splice(currentCardIndex, 1);
-
-        // Ajusta o índice para o próximo card (ou o último da nova lista)
-        if (
-            currentCardIndex >= availableCards.length &&
-            availableCards.length > 0
-        ) {
-            currentCardIndex = availableCards.length - 1;
-        } else if (availableCards.length === 0) {
-            currentCardIndex = 0; // Se a lista estiver vazia
-        }
-
-        // Exibe o próximo card
-        displayCurrentCard();
-    }
-    
-    // Torna a função de feedback global
-    window.processarFeedback = processarFeedback;
-
-
-    const cardFlashcard = document.getElementById("card_flashcard");
-    if (cardFlashcard) {
-        const cardInner = cardFlashcard.querySelector(".card-inner");
-        const feedbackButtons = document.querySelector(".feedback-buttons");
-        
-        // Lógica para virar o card ao clicar no corpo
-        if (cardInner) {
-            cardInner.addEventListener("click", () => {
-                cardFlashcard.classList.toggle("flipped");
-                // Mostra os botões de feedback após virar o card
-                if (feedbackButtons) {
-                    feedbackButtons.classList.toggle("invisible"); 
-                }
-            });
-        }
-
-        // Seletores reais dos botões de Ação
-        const btnAdd = document.querySelector("#btn-add-card");
-        const btnDelete = document.querySelector("#btn-delete-card");
-        const btnEdit = document.querySelector("#btn-edit-card");
-        const conjuntoId = getUrlParameter("conjunto_id");
-
-        if (conjuntoId) {
-             // Ação de ADICIONAR CARD (vai para a tela de criação com o ID do conjunto)
-            if (btnAdd) {
-                btnAdd.addEventListener('click', () => {
-                    window.location.href = `criar_flashcard.html?conjunto_id=${conjuntoId}`;
-                });
-            }
-            // Ação de EDITAR CONJUNTO
-            if (btnEdit) {
-                 btnEdit.addEventListener('click', () => {
-                    window.location.href = `editar_conjunto.html?conjunto_id=${conjuntoId}`;
-                });
-            }
-            // Ação de DELETAR CONJUNTO (Ainda precisa de uma função específica de delete)
-             if (btnDelete) {
-                 btnDelete.addEventListener('click', async () => {
-                     if (confirm("Tem certeza que deseja deletar este conjunto inteiro? Esta ação é irreversível e deletará todos os cards associados.")) {
-                         try {
-                              const response = await fetchAuthenticated(`${CONJUNTOS_API_URL}${conjuntoId}/`, {
-                                 method: "DELETE",
-                            });
-                             if (response.status === 204) {
-                                 alert("Conjunto deletado com sucesso.");
-                                 window.location.href = CONJUNTO_CARDS_PAGE; // Volta para a lista de conjuntos
-                             } else {
-                                throw new Error(`Falha ao deletar conjunto. Status: ${response.status}`);
-                            }
-                         } catch (error) {
-                             console.error("Erro ao deletar conjunto:", error);
-                            alert(`Não foi possível deletar o conjunto: ${error.message}`);
-                         }
-                     }
-                });
-             }
-        }
-
-
-        // Botões de Navegação (AGORA COM LÓGICA COMPLETA)
-        const btnPrev = document.getElementById("btn-prev-card");
-        const btnNext = document.getElementById("btn-next-card");
-
-        if (btnPrev) {
-            btnPrev.addEventListener("click", (event) => {
-                event.stopPropagation(); // Evita virar o card
-                if (currentCardIndex > 0) {
-                    currentCardIndex--;
-                    displayCurrentCard();
-                }
-            });
-        }
-        
-        if (btnNext) {
-             btnNext.addEventListener("click", (event) => {
-                event.stopPropagation(); // Evita virar o card
-                if (currentCardIndex < availableCards.length - 1) {
-                    currentCardIndex++;
-                    displayCurrentCard();
-                }
-            });
-        }
-    }
-    
-    // ---------------------- LOGICA DE CRIAÇÃO/EDIÇÃO DE FLASHCARD INDIVIDUAL --------------------
-    
-    const formFlashcardIndividual = document.getElementById("formFlashcardIndividual");
-    
-    if (formFlashcardIndividual) {
-        const flashcardId = getUrlParameter("flashcard_id");
-        const conjuntoId = getUrlParameter("conjunto_id");
-        const perguntaInput = document.getElementById("pergunta");
-        const respostaInput = document.getElementById("resposta");
-        const saveButton = formFlashcardIndividual.querySelector('.save-footer-btn');
-
-        // Lógica para carregar para edição
-        if (flashcardId) {
-            document.querySelector(".action-title").textContent = "Editar Flashcard";
-            saveButton.innerHTML = '<span class="material-icons">edit</span> Atualizar Card';
-            
-            async function loadCardForEdit() {
-                try {
-                    const response = await fetchAuthenticated(`${FLASHCARDS_API_URL}${flashcardId}/`);
-                    if (!response.ok) throw new Error("Flashcard não encontrado.");
-                    const card = await response.json();
-                    
-                    perguntaInput.value = card.pergunta;
-                    respostaInput.value = card.resposta;
-                } catch (error) {
-                    console.error("Erro ao carregar card para edição:", error);
-                    alert("Não foi possível carregar o flashcard para edição.");
-                }
-            }
-            loadCardForEdit();
-        } else if (conjuntoId) {
-             // Caso seja um novo card em um conjunto existente, só mostra o botão Salvar
-             document.querySelector(".action-title").textContent = "Novo Flashcard";
-        }
-        
-        // Lógica de Submissão
-        formFlashcardIndividual.addEventListener("submit", async (event) => {
-            event.preventDefault();
-
-            const pergunta = perguntaInput.value;
-            const resposta = respostaInput.value;
-            
-            if (!pergunta || !resposta || (!conjuntoId && !flashcardId)) {
-                alert("Preencha todos os campos e certifique-se de que o ID do conjunto está presente na URL.");
-                return;
-            }
-
-            const method = flashcardId ? "PUT" : "POST";
-            const url = flashcardId
-                ? `${FLASHCARDS_API_URL}${flashcardId}/`
-                : FLASHCARDS_API_URL;
-
-            try {
-                const response = await fetchAuthenticated(url, {
-                    method: method,
-                    body: JSON.stringify({ 
-                        pergunta: pergunta, 
-                        resposta: resposta,
-                        // Inclui conjuntoId apenas na criação (POST)
-                        ...(flashcardId ? {} : { conjunto: conjuntoId })
-                    }),
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error("Erro ao salvar Flashcard:", errorData);
-                    throw new Error(
-                        "Falha ao salvar o flashcard. Detalhes: " +
-                        JSON.stringify(errorData, null, 2)
-                    );
-                }
-                
-                alert(`Flashcard ${flashcardId ? "atualizado" : "criado"} com sucesso!`);
-                
-                // Redireciona de volta para a lista de conjuntos ou para a tela de estudo
-                if (conjuntoId) {
-                    window.location.href = `estudar_flashcards.html?conjunto_id=${conjuntoId}`;
-                } else {
-                    window.location.href = CONJUNTO_CARDS_PAGE;
-                }
-                
-            } catch (error) {
-                console.error("Erro na Requisição:", error);
-                alert(`Erro ao salvar: ${error.message}. Verifique o console para detalhes.`);
-            }
-        });
+      });
     }
 
+    // Seção: EDITAR FLASHCARD
+    if (btnEdit) {
+      btnEdit.addEventListener("click", () => {
+        const cardIdField = document.getElementById("current_card_id");
+        const cardId = cardIdField ? cardIdField.value : null;
 
+        if (!cardId)
+          return alert(
+            "Nenhum card selecionado para editar. Recarregue a página."
+          );
+
+        // Redireciona para a página de edição
+        window.location.href = `editar_flashcard.html?card_id=${cardId}`;
+      });
+    }
+
+    // Seção: AVALIAÇÃO (PROCESSA E AVANÇA)
+    const btnRuim = document.querySelector(".btn-ruim");
+    const btnOk = document.querySelector(".btn-ok");
+    const btnPerfeito = document.querySelector(".btn-perfeito");
+
+    if (btnRuim) btnRuim.addEventListener("click", () => processarFeedback(0));
+    if (btnOk) btnOk.addEventListener("click", () => processarFeedback(1));
+    if (btnPerfeito)
+      btnPerfeito.addEventListener("click", () => processarFeedback(2));
+  }
+
+  // ==================== LÓGICA DE EDIÇÃO DE FLASHCARD =================
+
+  /**
+   * @brief Envia as alterações do flashcard para a API usando PUT.
+   */
+  async function salvarEdicaoFlashcardAPI(cardId, pergunta, resposta) {
+    try {
+      const response = await fetch(`${FLASHCARDS_API_URL}${cardId}/`, {
+        method: "PATCH", // Mudei de PUT para PATCH
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pergunta: pergunta,
+          resposta: resposta,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Erro ao salvar card:", errorData);
+        throw new Error("Falha ao salvar as alterações do flashcard.");
+      }
+
+      alert("Flashcard atualizado com sucesso!");
+      window.location.href = CONJUNTO_CARDS_PAGE;
+    } catch (error) {
+      console.error("Erro na Requisição de edição:", error);
+      const messageBox = document.getElementById("edit-message");
+      if (messageBox) {
+        messageBox.textContent = `Erro ao salvar: ${error.message}`;
+        messageBox.classList.remove("hidden");
+      }
+    }
+  }
+
+  // Handler para o formulário de Edição
+  const formEditarFlashcard = document.getElementById("formEditarFlashcard");
+  if (formEditarFlashcard) {
+    const cardId = getUrlParameter("card_id");
+    const perguntaInput = document.getElementById("pergunta_edit");
+    const respostaInput = document.getElementById("resposta_edit");
+    const cardIdField = document.getElementById("edit_card_id");
+    const messageBox = document.getElementById("edit-message");
+
+    // Carregar dados do Flashcard para edição
+    async function carregarCardParaEdicao(id) {
+      try {
+        const response = await fetch(`${FLASHCARDS_API_URL}${id}/`);
+        if (!response.ok) {
+          throw new Error("Falha ao carregar dados do card.");
+        }
+        const card = await response.json();
+
+        perguntaInput.value = card.pergunta;
+        respostaInput.value = card.resposta;
+      } catch (e) {
+        console.error(e);
+        alert("Erro ao carregar card para edição.");
+        window.history.back(); 
+      }
+    }
+
+    if (cardId) {
+      cardIdField.value = cardId;
+      carregarCardParaEdicao(cardId);
+    } else {
+      alert("ID do card não especificado para edição.");
+      window.history.back();
+      return;
+    }
+
+    // Evento de Submissão para Salvar
+    formEditarFlashcard.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const cardToUpdateId = cardIdField.value;
+      const pergunta = perguntaInput.value.trim();
+      const resposta = respostaInput.value.trim();
+
+      if (!pergunta || !resposta) {
+        messageBox.textContent = "Preencha a pergunta e a resposta.";
+        messageBox.classList.remove("hidden");
+        return;
+      }
+
+      messageBox.classList.add("hidden");
+      salvarEdicaoFlashcardAPI(cardToUpdateId, pergunta, resposta);
+    });
+  }
+
+  // --------------------------------------------------------------------
+  // ====================== Chamadas Iniciais ===========================
+  // --------------------------------------------------------------------
+
+  // Chamada para carregar a lista de conjuntos na tela 'conjunto_cards.html'
+  if (document.getElementById("flashcard-grid")) {
+    loadConjuntoCards();
+  }
+
+  // Chamada para carregar o primeiro card na tela 'estudar_flashcards.html'
+  if (document.getElementById("card_flashcard")) {
+    carregarCardsParaEstudo();
+  }
 });

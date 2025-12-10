@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot de Resumos Inteligentes 📚</title>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+    }
+
+    h1 {
+      color: #1f2937;
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .container {
+      background: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 700px;
+      padding: 24px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    textarea, input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 1rem;
+      resize: vertical;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #2563eb;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    #resumo, #chat-container {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      background: #f9fafb;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .chat-message {
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    .user {
+      text-align: right;
+      color: #2563eb;
+      font-weight: 600;
+    }
+
+    .bot {
+      text-align: left;
+      color: #111827;
+    }
+
+    .loading {
+      color: #9ca3af;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lembris Inteligente</h1>
+
+  <div class="container">
+    <h3>Gerar resumo para estudo</h3>
+    <input type="text" id="tema" placeholder="Digite o tema (ex: Revolução Francesa)">
+    <button onclick="gerarResumo()">Gerar Resumo</button>
+    <div id="resumo"></div>
+  </div>
+
+  <div class="container">
+    <h3>Chat de dúvidas</h3>
+    <div id="chat-container"></div>
+    <textarea id="mensagem" rows="3" placeholder="Digite sua pergunta..."></textarea>
+    <button onclick="enviarMensagem()">Enviar</button>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:3000/api";
+ // ajuste se o backend estiver hospedado em outro domínio
+
+    async function gerarResumo() {
+      const tema = document.getElementById("tema").value.trim();
+      const resumoDiv = document.getElementById("resumo");
+
+      if (!tema) {
+        alert("Por favor, insira um tema.");
+        return;
+      }
+
+      resumoDiv.innerHTML = "<p class='loading'>Gerando resumo... aguarde ⏳</p>";
+
+      try {
+        const res = await fetch(`${API_URL}/resumo`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tema }),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          resumoDiv.innerHTML = `<p style="color:red;">Erro: ${data.error}</p>`;
+        } else {
+          resumoDiv.innerHTML = `<pre>${data.resumo}</pre>`;
+        }
+      } catch (error) {
+        resumoDiv.innerHTML = `<p style="color:red;">Erro ao conectar com o servidor.</p>`;
+      }
+    }
+
+    async function enviarMensagem() {
+      const mensagem = document.getElementById("mensagem").value.trim();
+      const chatContainer = document.getElementById("chat-container");
+
+      if (!mensagem) return;
+
+      // mostra a mensagem do usuário
+      chatContainer.innerHTML += `<div class="chat-message user">Você: ${mensagem}</div>`;
+      document.getElementById("mensagem").value = "";
+      chatContainer.innerHTML += `<div class="chat-message bot loading">Pensando...</div>`;
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      try {
+        const res = await fetch(`${API_URL}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mensagem }),
+        });
+        const data = await res.json();
+
+        const respostas = document.querySelectorAll(".loading");
+        respostas.forEach(r => r.remove());
+
+        if (data.error) {
+          chatContainer.innerHTML += `<div class="chat-message bot" style="color:red;">Erro: ${data.error}</div>`;
+        } else {
+          chatContainer.innerHTML += `<div class="chat-message bot">🤖 ${data.resposta}</div>`;
+        }
+
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      } catch (error) {
+        chatContainer.innerHTML += `<div class="chat-message bot" style="color:red;">Erro de conexão com o servidor.</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
